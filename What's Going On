@@ -1,0 +1,3 @@
+W, H, N are stated in the main.cpp file. They specify the number range that x and y can take respectively. N is the number of points (number of vertices). Every vertex has an edge to every other vertex. 
+
+The adjacency matrix that is created contains the edge length between each vertex to every other vertex. It is rounded. The method that gets the Euclidean distance rounds the doubles to integers. 
