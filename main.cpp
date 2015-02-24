@@ -1,7 +1,7 @@
 #include "common.h"
 #include "Point.h"
 
-int ** calculateMST(int ** adjacentMatrix, int size){
+int ** calculateMST(int ** adjacentMatrix, int size, int max){
 	//Will use Prim's Algorithm to calculate MST
 	int source = 0;
 	int current = source;
@@ -20,18 +20,19 @@ int ** calculateMST(int ** adjacentMatrix, int size){
 	}
 	cerr << "Passed array allocation" << endl;
 	for (int j = 0; j < (size-1); j++){
-		int min_edge = (current + 1) % size;
-		int min_len = adjacentMatrix[current][min_edge];
+		cerr << "current: " << current << endl;
+		int min_edge=0;
+		int min_len = max;
 		int i = 0;
 		for (i=0; i < size; i++){
 			int curr_len = adjacentMatrix[current][i];
-			if (curr_len<min_len && !visited[i]){
+			if (curr_len < min_len && !visited[i]){
 				min_edge = i;
 				min_len = curr_len;
 			}
 		}
-		minST[current][i] = min_len;
-		minST[i][current] = min_len;
+		minST[current][min_edge] = min_len;
+		minST[min_edge][current] = min_len;
 		current = min_edge;
 		visited[current] = 1;
 		
@@ -46,9 +47,9 @@ int main() {
 	int W, H, N;
 	Point pointset;
 
-	W = 100;
-	H = 100;
-	N = 10;
+	W = 10000;
+	H = 10000;
+	N = 1000;
 
 	cout<<"W: "<<W<<" H: "<<H<<" N:"<<N<<endl;
 
@@ -61,11 +62,14 @@ int main() {
 	//Deliverable A: From pointset and adjacentMatrix, you should construct MST with Prim or Kruskal
 		//create a MST creator class that will return the MST
 		//construct an MST
-	int ** min_span_tree = calculateMST(adjacentMatrix, N);
-	cerr << "hi" << endl;
+	int max;
+	if (W>=H) max = W; 
+	else max = H;
+	int ** min_span_tree = calculateMST(adjacentMatrix, N, max+1);
+	
 	for (int i = 0; i < N; i++){
 		for (int j = 0; j < N; j++){
-			cout << min_span_tree[i][j] << "  ";
+			cout << min_span_tree[i][j] << "\t ";
 		}
 		cerr << endl;
 	}
