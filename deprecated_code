@@ -1,0 +1,44 @@
+int ** calculateMST(int ** adjacentMatrix, int size, int max){
+	//Will use Prim's Algorithm to calculate MST
+	clock_t begin = clock();
+	int source = 0;
+	int current = source;
+	int min_source;
+	int * visited;
+	visited = new int[size];
+	for (int k =0 ; k<size; k++){
+		visited[k]=0;
+	}
+	visited[source] = 1;
+	int ** minST;
+	minST = new int[size][size]
+	minST = (int**)calloc(size, sizeof(int *));
+
+	for(int i=0; i<size ; ++i) {
+		minST[i] = (int*)calloc(size, sizeof(int));
+	}
+	cerr << "Passed array allocation" << endl;
+	for (int j = 0; j < (size-1); j++){
+		cerr << "current: " << current << endl;
+		int min_edge=0;
+		int min_len = max;
+		int i = 0;
+		for (i=0; i < size; i++){
+			int curr_len = adjacentMatrix[current][i];
+			if (curr_len < min_len && !visited[i]){
+				min_edge = i;
+				min_len = curr_len;
+			}
+		}
+		minST[current][min_edge] = min_len;
+		minST[min_edge][current] = min_len;
+		current = min_edge;
+		visited[current] = 1;
+		
+	}
+	clock_t end = clock();
+	double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+	cerr << "Seconds: " << elapsed_secs << endl;
+	return minST;
+
+}
