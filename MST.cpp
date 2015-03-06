@@ -13,7 +13,6 @@ MST::MST(int** input, int size) {
 MST::~MST() {
 
 }
-//use Prim's algorithm or Kruskal algorithm. Copied from 'http://www.geeksforgeeks.org/greedy-algorithms-set-5-prims-minimum-spanning-tree-mst-2/'
 void MST::makeTree() { 
      // Initialize all keys as INFINITE
      for (int i = 0; i < N; i++)
@@ -148,6 +147,7 @@ void MST::makeTSP2() {
 	int curr_vertex = source;
 	int tsp_cost = 0;
 	int new_edge=0;
+	//make a tour using DFS
 	while (count < N-1){
 		curr_vertex = findValue(curr_vertex);
 		//cerr << prev_vertex << "--" << curr_vertex << ' ';
@@ -163,11 +163,8 @@ void MST::makeTSP2() {
 	new_edge = adjacentMatrix[curr_vertex][source];
 	tsp_cost += new_edge;
 	tsp2[count] = new_edge;
-	//cerr << curr_vertex << "--" << source << " " << adjacentMatrix[curr_vertex][source] << endl;
 	cerr << tsp_cost << endl;
-	//add shortcuts if a vertex has no detours.
 
-	//calculate heuristic TSP cost
 }
 int MST::findValue(int padre){
 	if (padre == -1){
@@ -194,9 +191,7 @@ void MST::makeTSP1_5() {
 }
 
 void MST::minimumMatching() { //if you choose O(n^2)
-	//find minimum-weight matching for the MST. 
-	
-	//you should carefully choose a matching algorithm to optimize the TSP cost.
+		
 }
 
 void MST::combine() {
