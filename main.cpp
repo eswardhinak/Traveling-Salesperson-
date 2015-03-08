@@ -23,25 +23,23 @@ sourcecode : pub.ist.ac.at/~vnk/software/blossom5-v2.05.src.tar.gz
 
 */
 
-void LoadInput(int& node_num, int& edge_num, int*& edges, int*& weights, int** adjacentMatrix, int N) {
+void LoadInput(int& node_num, int& edge_num, int*& edges, int*& weights, float** adjacentMatrix, int N) {
 	int e = 0;
+	node_num = N;
 	edge_num = N*(N-1)/2 ; //complete graph
-
 	edges = new int[2*edge_num];
 	weights = new int[edge_num];
-
 	for(int i = 0; i < N ; ++i) {
 		for(int j = i+1 ; j< N ; ++j) {
 			edges[2*e] = i;
 			edges[2*e+1] = j;
 			weights[e] = adjacentMatrix[i][j];
-			e++;	
+			e++;
 		}
 	}
-	if (e != edge_num) { 
+	if (e != edge_num) {
 		cout<<"the number of edge is wrong"<<endl;
-
-		exit(1); 
+		exit(1);
 	}
 }
 
@@ -54,17 +52,6 @@ void PrintMatching(int node_num, PerfectMatching* pm) {
 	}
 }
 
-bool isOddDegree(int vertex, MST * mst, int N){
-	int count=0;
-	for (int i = 0; i < N; i++){
-		if (mst->parent[i] == vertex){
-			count++;
-		}
-	}
-	if (vertex != 0) count++;
-	if (count %2 == 0) return false;
-	else return true;
-}
 void calculateDegree(int * degree, MST* mst, int * node_num, int N){
 	for (int j = 0; j < N; j++){
 		if (mst->parent[j] > -1)
@@ -121,18 +108,34 @@ int main() {
 	//Deliverable C: Find TSP1.5 path from the constructed MST
 	struct PerfectMatching::Options options;
 	int i, e, node_num = 0, edge_num = N*(N-1)/2;
-	int **nn_ptr = &node_num;
+	int * nn_ptr = &node_num;
 	int * degree =  new int[N];
 	calculateDegree(degree, mst2, nn_ptr, N);
+	int * oddDegree = new int[node_num];
+	int j = 0;
+
+	for (int i = 0; i<N;i++){
+		if(degree[i] %2 !=0){
+			oddDegree[j] = i;
+		}
+		j++;
+	}
 	int* edges;
 	int* weights;
+	int * mapping = new int[node_num];
 	PerfectMatching *pm = new PerfectMatching(node_num, edge_num); //becuase of value of first param, we get wrong node id's error
-
+	j=0;
+	for (i = 0; i < N; i++){
+		if (degree[i] % 2 != 0){
+			mapping[j] = i;
+			j++;
+		}
+	}
 	LoadInput(node_num, edge_num, edges, weights, adjacentMatrix, N);
 	for (e=0; e<edge_num; e++) {
 		if (degree[edges[2*e]]%2!=0 && degree[edges[2*e+1]]%2!=0){					
 			cerr << "Selected: " << edges[2*e]<< "   "<< edges[2*e+1] << endl;
-			pm->AddEdge(edges[2*e], edges[2*e+1], weights[e]);
+			pm->AddEdge(2*e, 2*e+1, weights[e]);
 		}
 		cerr << edges[2*e] << "   "<< edges[2*e+1]<< endl;
 	}

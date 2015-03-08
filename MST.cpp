@@ -191,9 +191,11 @@ void MST::makeTSP1_5() {
 }
 
 void MST::minimumMatching() { //if you choose O(n^2)
-		
+	//add edges to MST using minimum matching code provided
+
 }
 
 void MST::combine() {
 	//combine minimum-weight matching with the MST to get a multigraph which has vertices with even degree
+	
 }
