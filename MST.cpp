@@ -179,13 +179,13 @@ int MST::findValue(int padre){
 	return findValue(parent[padre]);
 }
 
-void MST::makeTSP1_5() {
+void MST::makeTSP1_5(PerfectMatching * pm, float cost, int node_num, int * oddDegree) {
 	
 	//construct minimum-weight-matching for the given MST
-	minimumMatching();
+	//minimumMatching();
 
 	//make all edges has even degree by combining mimimum-weight matching and MST
-	combine();
+	combine(pm, cost, node_num, oddDegree);
 
 	//calculate heuristic TSP cost 
 }
@@ -195,7 +195,14 @@ void MST::minimumMatching() { //if you choose O(n^2)
 
 }
 
-void MST::combine() {
+void MST::combine(PerfectMatching * pm, float cost, int node_num, int * oddDegree) {
 	//combine minimum-weight matching with the MST to get a multigraph which has vertices with even degree
+
+	int i, j;
+	for (i=0; i<node_num; i++) {
+		j = pm->GetMatch(i);
+
+		//if (i < j) printf("%d %d %d\n", oddDegree[i], oddDegree[j], adjacentMatrix[oddDegree[i]][oddDegree[j]] );
+	}
 	
 }

@@ -1,4 +1,5 @@
 #include "common.h"
+#include "Minmatching/PerfectMatching.h"
 
 #pragma once
 
@@ -25,14 +26,15 @@ public:
 	int findValue(int padre);
 
 	//deliverable c
-	void makeTSP1_5();
+	void makeTSP1_5(PerfectMatching * pm, float cost, int node_num, int * oddDegree);
 	
 	float calMean(int option);
 	float calStd(int option);
+	void combine(PerfectMatching * pm, float cost, int node_num, int * oddDegree);
+
 
 private:
 	void minimumMatching();
-	void combine();
 	int minKey(int key[], bool mstSet[]);
 
 };
