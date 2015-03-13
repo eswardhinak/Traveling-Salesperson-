@@ -42,3 +42,42 @@ int ** calculateMST(int ** adjacentMatrix, int size, int max){
 	return minST;
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	auto current_node = nodes.begin();
+	int initial_vertex = current_node->first;
+	int current_vertex = initial_vertex + 1;
+	int prev_vertex = initial_vertex;
+	int total_cost=0;
+	bool * visited= new bool[N];
+	visited[initial_vertex] = true;
+	while (current_vertex != initial_vertex){
+		cerr << current_vertex << endl;
+		Node * curr = current_node->second;
+		auto it = (curr->edges).begin();
+		int toNode;
+		for (; it != (curr->edges).end(); it++){
+			toNode = it->first;
+			if (!visited[toNode]) break;
+		}
+		int curr_cost = (it->second).getCost();
+		total_cost += curr_cost;
+		prev_vertex = current_vertex;
+		current_vertex = toNode;
+		visited[current_vertex] =true;
+		current_node = nodes.find(toNode);
+	}
+	cerr << "Total TSP 1.5 cost: " << total_cost << endl;
+}
