@@ -23,18 +23,17 @@ sourcecode : pub.ist.ac.at/~vnk/software/blossom5-v2.05.src.tar.gz
 
 */
 
-void LoadInput(int& node_num, int& edge_num, int*& edges, int*& weights, float** adjacentMatrix, int N) {
+void LoadInput(int& node_num, int& edge_num, int*& edges, int*& weights, float** adjacentMatrix, int N, int * oddDegree) {
 	int e = 0;
-	node_num = N;
-	edge_num = N*(N-1)/2 ; //complete graph
+	edge_num = node_num*(node_num-1)/2 ; //complete graph
 	edges = new int[2*edge_num];
 	weights = new int[edge_num];
-	for(int i = 0; i < N ; ++i) {
-		for(int j = i+1 ; j< N ; ++j) {
+	for(int i = 0; i < node_num ; ++i) {
+		for(int j = i+1 ; j< node_num; ++j) {
 			edges[2*e] = i;
 			edges[2*e+1] = j;
-			weights[e] = adjacentMatrix[i][j];
-			e++;
+			weights[e] = adjacentMatrix[oddDegree[i]][oddDegree[j]];
+ 			e++;
 		}
 	}
 	if (e != edge_num) {
@@ -43,17 +42,17 @@ void LoadInput(int& node_num, int& edge_num, int*& edges, int*& weights, float**
 	}
 }
 
-void PrintMatching(int node_num, PerfectMatching* pm) {
+void PrintMatching(int node_num, PerfectMatching* pm, int * oddDegree, float ** adjacentMatrix) {
 	int i, j;
 
 	for (i=0; i<node_num; i++) {
 		j = pm->GetMatch(i);
-		if (i < j) printf("%d %d\n", i, j);
+		if (i < j) printf("%d %d %f\n", oddDegree[i], oddDegree[j], adjacentMatrix[oddDegree[i]][oddDegree[j]] );
 	}
 }
 
 void calculateDegree(int * degree, MST* mst, int * node_num, int N){
-	for (int j = 0; j < N; j++){
+/*	for (int j = 0; j < N; j++){
 		if (mst->parent[j] > -1)
 			degree[mst->parent[j]]++;
 	}
@@ -62,37 +61,49 @@ void calculateDegree(int * degree, MST* mst, int * node_num, int N){
 			degree[i]++;
 		if (degree[i] % 2 != 0)
 			(*node_num)++;
-		cerr << i << "--->" << degree[i] << endl;
+	}
+*/
+	for (int i = 0; i < N; i++){
+		Node * node = mst->nodes.find(i)->second;
+		degree[i] = node->getEdges().size();
+		if (degree[i] % 2 != 0){
+			(*node_num)++;
+		}
 	}
 
+
 }
+
+
 int main() {
 	cerr << "Program start.";
 	set< pair<int,int> > generatedPointset;
-	int** adjacentMatrix;
+	float** adjacentMatrix;
 	int W, H, N;
 	Point pointset;
 
-	W = 100;
-	H = 100;
-	N = 10;
+	W = 1000;
+	H = 1000;
+	N = 1000;
 
 	cout<<"W: "<<W<<" H: "<<H<<" N:"<<N<<endl;
 
 	pointset.generatePoint(W, H, N); //max(W,H,N) should be < 20000 because of memory limitation
-	//pointset.printPointset();
 
 	generatedPointset = pointset.getPointset();
 	adjacentMatrix = pointset.getAdjacentMatrix();
 
 	//Deliverable A: From pointset and adjacentMatrix, you should construct MST with Prim or Kruskal
-		//create a MST creator class that will return the MST
-		//construct an MST
+
 	MST * mst2 = new MST(adjacentMatrix, N);
 	mst2->makeTree();
-	mst2->printMST();
+	//mst2->printMST();
+	cout<< "Just the MST:" << endl;
 	cout << "Mean: " << mst2->calMean(MST_1) << endl;
 	cout << "Standard Deviation: " << mst2->calStd(MST_1)<<endl;
+	cout << "MST total weight: " << mst2->mst_total_weight << endl;
+
+	cout << "-------------------" << endl;
 
 	//Deliverable B: Find TSP2 path from the constructed MST
 
@@ -100,55 +111,69 @@ int main() {
 	mst2->makeTSP2();
 	clock_t end = clock();
 	double elapsed_seconds = double(end - begin) / CLOCKS_PER_SEC;
-	cerr << "TSP_time:  " << elapsed_seconds << endl;
+	cout << "TSP2 results:" << endl;
 	cout << "Mean: "<< mst2->calMean(TSP2) << endl;
 	cout << "Standard Deviation: " << mst2->calStd(TSP2) << endl;
+	cout << "Total Weight: " << mst2->tsp2_total_weight << endl;
+
 
 
 	//Deliverable C: Find TSP1.5 path from the constructed MST
+	//construct MST based off of arrays
+
+	for (int i = 1; i < N; i++){
+		mst2->addEdge(mst2->parent[i], i, mst2->key[i]);
+	}
+
 	struct PerfectMatching::Options options;
-	int i, e, node_num = 0, edge_num = N*(N-1)/2;
+	int i, e, node_num = 0;
 	int * nn_ptr = &node_num;
 	int * degree =  new int[N];
+
 	calculateDegree(degree, mst2, nn_ptr, N);
 	int * oddDegree = new int[node_num];
-	int j = 0;
 
+	int j = 0;
 	for (int i = 0; i<N;i++){
-		if(degree[i] %2 !=0){
+		if(degree[i]%2 !=0){
 			oddDegree[j] = i;
-		}
-		j++;
-	}
-	int* edges;
-	int* weights;
-	int * mapping = new int[node_num];
-	PerfectMatching *pm = new PerfectMatching(node_num, edge_num); //becuase of value of first param, we get wrong node id's error
-	j=0;
-	for (i = 0; i < N; i++){
-		if (degree[i] % 2 != 0){
-			mapping[j] = i;
 			j++;
 		}
 	}
-	LoadInput(node_num, edge_num, edges, weights, adjacentMatrix, N);
+	int edge_num = node_num * (node_num-1) / 2;
+	cerr <<"Node num: "<<  node_num << " " << *nn_ptr<< endl;
+	int* edges;
+	int* weights;
+	PerfectMatching *pm = new PerfectMatching(node_num, edge_num);
+	LoadInput(node_num, edge_num, edges, weights, adjacentMatrix, N, oddDegree);
 	for (e=0; e<edge_num; e++) {
-		if (degree[edges[2*e]]%2!=0 && degree[edges[2*e+1]]%2!=0){					
-			cerr << "Selected: " << edges[2*e]<< "   "<< edges[2*e+1] << endl;
-			pm->AddEdge(2*e, 2*e+1, weights[e]);
-		}
-		cerr << edges[2*e] << "   "<< edges[2*e+1]<< endl;
+		pm->AddEdge(edges[2*e], edges[2*e+1], weights[e]);
 	}
 
 	pm->options = options;
 	pm->Solve();
 
-	double cost = ComputePerfectMatchingCost(node_num, edge_num, edges, weights, pm);
+	float cost = ComputePerfectMatchingCost(node_num, edge_num, edges, weights, pm);
 	printf("Total cost of the perfect min-weight matching = %.1f\n", cost);
-	
-	PrintMatching(node_num, pm);
+
+	//PrintMatching(node_num, pm, oddDegree ,adjacentMatrix);
+	//Code to add Perfect matching edges to MST
+	int count = 0;
+	for (int i=0; i<node_num; i++) {
+		j = pm->GetMatch(i);
+		if (i < j){
+			mst2->addEdge(oddDegree[i], oddDegree[j], adjacentMatrix[oddDegree[i]][oddDegree[j]]);
+			count++; 
+		}
+	}
+	int total_edges = (N-1) + count;
+	cerr << "TotalEdges: " << total_edges  << endl;
+	mst2->makeTSP1_5(total_edges);
+
 
 	delete pm;
+	delete [] oddDegree;
+	delete [] degree;
 	delete [] edges;
 	delete [] weights;
 	
