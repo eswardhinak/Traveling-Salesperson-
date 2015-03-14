@@ -62,7 +62,7 @@ class Node {
      * Gets total cost of all edges terminating at this Node.
      */
     unsigned int totalEdgeCost() const;
-    const std::vector<std::pair<int, Edge*> &getEdges() const;
+    const std::vector<Edge*>& getEdges() const;
 
     
   private:
@@ -88,10 +88,10 @@ class Node {
      */
     bool visited;
 
-    /**
-     * Map of adjacent Node name to Edge describing the adjacency.
-     */
-    std::vector<std::pair<int, Edge*> edges;
+ 
+ 	//we will use a vector of edges rather than a map because we want to store multiple instances of the same edge 
+ 	//if minimum matching wants us to do that.
+    std::vector<Edge*> edges;
 };
 
 #endif

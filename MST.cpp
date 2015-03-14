@@ -225,8 +225,8 @@ int MST::DFSCount(int v, bool * encountered){
 	Node * nodeOne = (nodes.find(v))->second;
 	auto it = nodeOne->edges.begin();
 	for (; it != nodeOne->edges.end(); it++){
-		Edge *  edgeOne = it->second;
-		int node_id = it->first;
+		Edge *  edgeOne = *it;
+		int node_id = (edgeOne->getTo())->getName();
 		if (!edgeOne->getTraversed() && !encountered[node_id])
 			count += DFSCount(node_id, encountered);
 	}
@@ -238,7 +238,7 @@ int MST::isValidEdge(int u, int v){
 	Node * nodeOne = (nodes.find(u))->second;
 	auto it = (nodeOne->edges).begin();
 	for (; it != nodeOne->edges.end(); it++){
-		Edge * edgeOne = it->second;
+		Edge * edgeOne = *it;
 		if (!edgeOne->getTraversed()){
 			count++;
 		}
@@ -264,8 +264,24 @@ void MST::unHideEdge(int u, int v){
 	Node * nodeOne = (nodes.find(u))->second; 
 	Node * nodeTwo = (nodes.find(v))->second;
 	//get the Edge pointers
-	Edge  * edgeOne = (nodeOne->edges.find(v))->second;
-	Edge   * edgeTwo = (nodeTwo->edges.find(u))->second;
+	Edge * edgeOne;
+	auto it1 = (nodeOne->edges).begin();
+	for (; it1 != (nodeOne->edges).end(); it1++){
+		Edge * currEdge = *it1;
+		if (currEdge->getTo()->getName() == v && currEdge->getTraversed() == true){
+			edgeOne = currEdge;
+			break;
+		}
+	}
+	Edge * edgeTwo;
+	auto it2 = (nodeTwo->edges).begin();
+	for (; it2 != (nodeTwo->edges).end(); it2++){
+		Edge * currEdge = *it2;
+		if (currEdge->getTo()->getName() == u && currEdge->getTraversed() == true){
+			edgeTwo = currEdge;
+			break;
+		}
+	}
 	//set traversal flag to false
 	edgeOne->setTraversed(false);
 	edgeTwo->setTraversed(false);
@@ -277,8 +293,24 @@ void MST::hideEdge(int u, int v){
 	Node * nodeOne = (nodes.find(u))->second;
 	Node * nodeTwo = (nodes.find(v))->second;
 	//get Edge pointers
-	Edge *edgeOne = (nodeOne->edges.find(v))->second;
-	Edge *edgeTwo = (nodeTwo->edges.find(u))->second;
+	Edge * edgeOne;
+	auto it1 = (nodeOne->edges).begin();
+	for (; it1 != (nodeOne->edges).end(); it1++){
+		Edge * currEdge = *it1;
+		if (currEdge->getTo()->getName() == v && currEdge->getTraversed() == false){
+			edgeOne = currEdge;
+			break;
+		}
+	}
+	Edge * edgeTwo;
+	auto it2 = (nodeTwo->edges).begin();
+	for (; it2 != (nodeTwo->edges).end(); it2++){
+		Edge * currEdge = *it2;
+		if (currEdge->getTo()->getName() == u && currEdge->getTraversed() == false){
+			edgeTwo = currEdge;
+			break;
+		}
+	}
 	//set traversal flag to true
 	edgeOne->setTraversed(true);
 	edgeTwo->setTraversed(true);	
@@ -307,13 +339,10 @@ void MST::makeTSP1_5(int total_edges) {
 			j++;
 		}	
 	}
-	float tsp1_5_total_weight = 0;
+	tsp1_5_total_weight = 0;
 	for (int k = 0; k < (N-1); k++){
-		//cerr << adjacentMatrix[noDuplicates[k]][noDuplicates[k+1]]<< endl;
 		tsp1_5_total_weight += adjacentMatrix[noDuplicates[k]][noDuplicates[k+1]];
 	}
-	cerr << "Ci: " << *ci_ptr << endl;
-	cerr << "Total TSP 1.5 Approximation Weight: " << tsp1_5_total_weight << endl;
 }
 
 void MST::eulerTraversal(int current, int * ci,  int * traversal){
@@ -322,8 +351,8 @@ void MST::eulerTraversal(int current, int * ci,  int * traversal){
 	traversal[*ci] = current;
 	auto it = (nodeOne->edges).begin();
 	for (; it != (nodeOne->edges).end(); it++){
-		Edge * edgeOne = it->second;
-		int toNode = it->first;
+		Edge * edgeOne = *it;
+		int toNode = edgeOne->getTo()->getName();
 		//cerr << toNode << endl;
 		if (!edgeOne->getTraversed() && isValidEdge(current, toNode)){
 			hideEdge(current,toNode);

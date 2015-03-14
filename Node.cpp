@@ -21,11 +21,8 @@ int Node::getName() const{
 	return name;
 }
 bool Node::addEdge(Node *to, unsigned int cost){
-	Edge * e= new Edge(this, to, cost); //creates a RTS edge
-	int adj_name = to->getName(); //gets name of connected Node
-	//creates pair
-	std::pair<int, Edge*> edge_pair (adj_name, e);
-	edges.push_back(edge_pair); //inserts into vector
+	Edge * e= new Edge(this, to, cost); //creates a RTS edge	
+	edges.push_back(e); //inserts into vector
 	return true;
 }
 
@@ -37,7 +34,8 @@ unsigned int Node::totalEdgeCost() const{
 	unsigned int total_cost = 0; //initialize total cost
 	//iterate through edges and get cost
 	for (; it != edges.end(); ++it){
-		total_cost += (it->second)->getCost();
+		Edge * edgeCurrent = *it;
+		total_cost += edgeCurrent->getCost();
 	}
 	return total_cost; 
 }
@@ -68,7 +66,7 @@ void Node::clearEdges(){
 }
 
 /*Accessor method to get the edges map from Node*/
-const std::unordered_map<int, Edge*>& Node::getEdges() const{
-	const unordered_map<int, Edge*>& map_ref = edges;
-	return map_ref;
+const std::vector<Edge *>& Node::getEdges() const{
+	const vector<Edge*>& list_ref = edges;
+	return list_ref;
 }
