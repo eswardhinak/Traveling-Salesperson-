@@ -215,7 +215,8 @@ int main(int argc, char ** argv) {
 	}
 
 	//Mean calculation
-	cout << "\n\n\n___________________________" << endl;
+	cout << "\n\n\nNumber of Trials: " << trials <<endl;
+	cout << "___________________________" << endl;
 	double meanMST = 0.0;
 	double meanMSTTime = 0.0;
 	double meanTSP2 = 0.0;
