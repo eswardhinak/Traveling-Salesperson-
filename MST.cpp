@@ -3,15 +3,24 @@
 #include "Edge.hpp"
 #include "Node.hpp"
 #include <iostream>
+#include <array>
 
 MST::MST(float** input, int size) {
 	adjacentMatrix = input;
-	key = new int[size];   
-    mstSet = new bool[size];  
+	key = new float[size];   
+	memset(key, 0, size);
+    mstSet = new bool[size]; 
+    memset(mstSet, false, size); 
 	parent = new int[size];
+	memset(parent, -1, size);
 	visited = new bool[size];
-	tsp2 = new int[size];
+	memset(visited,false,size);
+	tsp2 = new float[size];
+	memset(tsp2, 0, size);
 	N = size;
+	tsp2_total_weight = 0;
+	mst_total_weight = 0;
+	tsp1_5_total_weight = 0;
 }
 
 MST::~MST() {
@@ -26,6 +35,11 @@ MST::~MST() {
 		delete(it->second); //delete node
 		it->second = NULL; //set node pointer to null
 	}
+	for (int i = 0; i < N; i++){
+		free (adjacentMatrix[i]);
+	}
+	free(adjacentMatrix);
+	adjacentMatrix = nullptr;
 
 }
 
@@ -90,14 +104,18 @@ void MST::makeTree() {
              parent[v]  = u, key[v] = adjacentMatrix[u][v];
           }
      }
+     for (int j = 1; j < N; j++){
+     	mst_total_weight += key[j];
+     }
 }
 
 // A utility function to find the vertex with minimum key value, from
 // the set of vertices not yet included in MST
-int MST::minKey(int key[], bool mstSet[])
+int MST::minKey(float key[], bool mstSet[])
 {
    // Initialize min value
-   int min = INT_MAX, min_index;
+   float min = std::numeric_limits<float>::max();
+   int min_index;
  
    for (int v = 0; v < N; v++)
      if (mstSet[v] == false && key[v] < min)
@@ -167,7 +185,8 @@ float MST::calStd(int option) {
 		mean_dist /= N;
 		std = sqrt(mean_dist);
 	} else if(option == TSP1_5) {
-
+		float mean = calMean(option);
+		//float dist_from_mean = 
 	}
 
 	return std;
@@ -180,16 +199,14 @@ void MST::makeTSP2() {
 	int count = 0;
 	int curr_vertex = source;
 	int tsp_cost = 0;
-	int new_edge=0;
+	float new_edge=0;
 	//make a tour using DFS
 	while (count < N-1){
 		curr_vertex = findValue(curr_vertex);
-		//cerr << prev_vertex << "--" << curr_vertex << ' ';
 		if (curr_vertex == -1)
 			return;
 		new_edge = adjacentMatrix[curr_vertex][prev_vertex];
 		tsp_cost += new_edge;
-		//cerr << adjacentMatrix[curr_vertex][prev_vertex] << endl;
 		prev_vertex = curr_vertex;
 		tsp2[count] = new_edge;
 		count++;
@@ -197,7 +214,9 @@ void MST::makeTSP2() {
 	new_edge = adjacentMatrix[curr_vertex][source];
 	tsp_cost += new_edge;
 	tsp2[count] = new_edge;
-	//cerr << tsp_cost << endl;
+	for (int j = 0; j < N; j++){
+		tsp2_total_weight += tsp2[j];
+	}
 
 }
 int MST::findValue(int padre){
@@ -211,12 +230,8 @@ int MST::findValue(int padre){
 		}
 	}
 	return findValue(parent[padre]);
-}/*
-int MST::recursiveFindNextAvailableNode(bool * visited, int current){
-	auto it = nodes.find(current);
-	Node * currentNode = it->second;
+}
 
-}*/
 //counts the number of vertices reachable in the present graph 
 int MST::DFSCount(int v, bool * encountered){
 	encountered[v] = true;
@@ -256,6 +271,7 @@ int MST::isValidEdge(int u, int v){
 
 	unHideEdge(u, v); //add the edge back to the graph
 	//if count1 is greater than count2 then the edge is a bridge.
+	delete [] encountered;
 	return (count1 > count2) ? false:true; 
 }
 /*Unhide both instances of an edge with vertices u and v*/
@@ -320,13 +336,12 @@ void MST::hideEdge(int u, int v){
 void MST::makeTSP1_5(int total_edges) {
 	//total edges in MST + minimum matching
 	this->total_edges = total_edges;
-	//
-	int * traversal = new int[total_edges];
+ 	int * traversal = new int[total_edges];
 	int ci = 0;
 	int * ci_ptr = &ci;
 	memset(traversal, 0, total_edges);
 	traversal[0] = 0;
-	eulerTraversal(0, ci_ptr, traversal);
+	eulerTraversal(0, ci_ptr, traversal, total_edges);
 	bool * duplicateSearch = new bool[N];
 	int * noDuplicates = new int[N];
 	memset(duplicateSearch, false, N);
@@ -339,36 +354,32 @@ void MST::makeTSP1_5(int total_edges) {
 			j++;
 		}	
 	}
-	tsp1_5_total_weight = 0;
-	for (int k = 0; k < (N-1); k++){
+	tsp1_5_total_weight = 0.0;
+	int k;
+	for (k = 0; k < (N-1); k++){
 		tsp1_5_total_weight += adjacentMatrix[noDuplicates[k]][noDuplicates[k+1]];
+		//cerr << noDuplicates[k] << " " << noDuplicates[k+1] << endl;
 	}
+	tsp1_5_total_weight += adjacentMatrix[noDuplicates[k]][noDuplicates[0]];
+	delete [] traversal;
+	delete [] duplicateSearch;
+	delete [] noDuplicates;
 }
 
-void MST::eulerTraversal(int current, int * ci,  int * traversal){
+void MST::eulerTraversal(int current, int * ci,  int * traversal, int total_edges){
 	Node * nodeOne = (nodes.find(current))->second;
 	//cerr << "Current Node: " << nodeOne->getName() << endl;
-	traversal[*ci] = current;
+	if (*ci > -1 && *ci < total_edges)
+		traversal[*ci] = current;
 	auto it = (nodeOne->edges).begin();
 	for (; it != (nodeOne->edges).end(); it++){
 		Edge * edgeOne = *it;
 		int toNode = edgeOne->getTo()->getName();
-		//cerr << toNode << endl;
 		if (!edgeOne->getTraversed() && isValidEdge(current, toNode)){
 			hideEdge(current,toNode);
 			(*ci)++;
-			eulerTraversal(toNode, ci , traversal);
+			eulerTraversal(toNode, ci , traversal, total_edges);
 		}
 	}
 }
 
-
-void MST::minimumMatching() { //if you choose O(n^2)
-	//add edges to MST using minimum matching code provided
-
-}
-
-void MST::combine(PerfectMatching * pm, float cost, int node_num, int * oddDegree) {
-	//combine minimum-weight matching with the MST to get a multigraph which has vertices with even degree
-	//build a tree first. 	
-}

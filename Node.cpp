@@ -17,6 +17,14 @@ using namespace std;
 Node::Node(int name){
 	this->name = name; //sets the name variable 
 }
+
+Node::~Node(){
+	auto it = edges.begin();
+	for (; it!= edges.end(); it++){
+		Edge * currEdge = *it;
+		delete currEdge;
+	}
+}
 int Node::getName() const{
 	return name;
 }

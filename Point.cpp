@@ -2,6 +2,7 @@
 
 Point::Point() {
 	pointNum = 0;
+	//srand(time(NULL));
 }
 
 Point::~Point() {
@@ -24,9 +25,12 @@ void Point::generatePoint(unsigned int H, unsigned int W, unsigned int N) {
 	pointNum = N;
 
 	//uniform distrubution generation
+	//srand(time(NULL));
+
+	//unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 	cerr << "The Seed is " << seed << endl;
-	//unsigned seed = 4068477645;
+	//unsigned seed = 3633188237;
 	std::default_random_engine generator(seed);
 	std::uniform_int_distribution<int> x_distribution(0,H);
 	std::uniform_int_distribution<int> y_distribution(0,W);

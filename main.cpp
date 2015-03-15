@@ -1,6 +1,7 @@
 #include "common.h"
 #include "Point.h"
 #include <ctime>
+#include <math.h>
 #include "MST.h"
 #include "Minmatching/PerfectMatching.h"
 
@@ -66,111 +67,196 @@ void calculateDegree(int * degree, MST* mst, int * node_num, int N){
 
 }
 
-
+double calSTD(double mean, double * values, int trials, bool debug){
+	double distance = 0;
+	double meanDist = 0;
+	for (int i =0 ; i < trials; i++){
+		if (debug)
+			cerr << values[i]<< endl;
+		double dist = values[i] - mean;
+		distance = dist*dist;
+		//if (debug)
+			//cerr << distance;
+		meanDist += distance;
+	}
+	if (debug)
+		cerr <<meanDist;
+	meanDist /= trials;
+	if (debug)
+	cerr<<meanDist;
+	double std = sqrt(meanDist);
+	return std;
+}
 int main(int argc, char ** argv) {
 	set< pair<int,int> > generatedPointset;
 	float** adjacentMatrix;
 	int W, H, N;
-	Point pointset;
 
 	//convert command line arguments to W, H, N
 	W = atoi(argv[1]); 
 	H = atoi(argv[2]);
 	N = atoi(argv[3]);
-
+	int trials = atoi(argv[4]);
+	double * mstTrials = new double[trials];
+	memset(mstTrials, 0, trials);
+	double * timeMSTTrials = new double[trials];
+	memset(timeMSTTrials, 0, trials);
+	double * tsp2Trials = new double[trials];
+	memset(tsp2Trials, 0, trials);
+	double * timeTSP2Trials = new double[trials];
+	memset(timeTSP2Trials, 0, trials);
+	double * tsp1_5Trials = new double[trials];
+	memset(tsp1_5Trials, 0, trials);
+	double * timeTSP1_5Trials  = new double[trials];
+	memset(timeTSP1_5Trials, 0, trials);
 	cout<<"W: "<<W<<" H: "<<H<<" N:"<<N<<endl; 
+	for (int z = 0 ; z < trials; z++){
+		Point pointset;
+		pointset.generatePoint(W, H, N); //max(W,H,N) should be < 20000 because of memory limitation
 
-	pointset.generatePoint(W, H, N); //max(W,H,N) should be < 20000 because of memory limitation
+		generatedPointset = pointset.getPointset();
+		adjacentMatrix = pointset.getAdjacentMatrix();
 
-	generatedPointset = pointset.getPointset();
-	adjacentMatrix = pointset.getAdjacentMatrix();
+		//Deliverable A: From pointset and adjacentMatrix, you should construct MST with Prim or Kruskal
+		clock_t begin = clock();
+		MST * mst2 = new MST(adjacentMatrix, N);
+		mst2->makeTree();
+		clock_t end = clock();
+		double elapsed_seconds = double(end - begin) / CLOCKS_PER_SEC;
+		//cout << "-------------------" << endl;
+		//cout<< "MST:" << endl;
+		//cout << "MST total weight: " << mst2->mst_total_weight << endl;
+		//cout << "Time taken: "<< elapsed_seconds << endl;
+		//cout << "-------------------" << endl;
+		mstTrials[z] = mst2->mst_total_weight;
+		timeMSTTrials[z] = elapsed_seconds;
 
-	//Deliverable A: From pointset and adjacentMatrix, you should construct MST with Prim or Kruskal
-	MST * mst2 = new MST(adjacentMatrix, N);
-	mst2->makeTree();
-	cout << "-------------------" << endl;
-	cout<< "MST:" << endl;
-	cout << "Mean: " << mst2->calMean(MST_1) << endl;
-	cout << "Standard Deviation: " << mst2->calStd(MST_1)<<endl;
-	cout << "MST total weight: " << mst2->mst_total_weight << endl;
+		//Deliverable B: Find TSP2 path from the constructed MST
+		begin = clock();
+		mst2->makeTSP2();
+		end = clock();
+		elapsed_seconds = double(end - begin) / CLOCKS_PER_SEC;
+		//cout << "TSP-2 Approximation:" << endl;
+		//cout << "Total Weight: " << mst2->tsp2_total_weight << endl;
+		//cout << "Time taken: " << elapsed_seconds << endl;
+		//cout << "------------------" << endl;
+		tsp2Trials[z] = mst2->tsp2_total_weight;
+		timeTSP2Trials[z] = elapsed_seconds;
 
-	cout << "-------------------" << endl;
-
-	//Deliverable B: Find TSP2 path from the constructed MST
-	mst2->makeTSP2();
-	double elapsed_seconds = double(end - begin) / CLOCKS_PER_SEC;
-	cout << "TSP-2 Approximation:" << endl;
-	cout << "Mean: "<< mst2->calMean(TSP2) << endl;
-	cout << "Standard Deviation: " << mst2->calStd(TSP2) << endl;
-	cout << "Total Weight: " << mst2->tsp2_total_weight << endl;
-	cout << "------------------" << endl;
-
-	//Deliverable C: Find TSP1.5 path from the constructed MST
-	//construct MST based off of arrays
-	for (int i = 1; i < N; i++){
-		mst2->addEdge(mst2->parent[i], i, mst2->key[i]); //add edges from existing MST representation
-	}
-
-	struct PerfectMatching::Options options; //algorithm for PerfectMatching
-	int i, e, node_num = 0; 
-	int * nn_ptr = &node_num;
-	int * degree =  new int[N];
-
-	calculateDegree(degree, mst2, nn_ptr, N); //get odd degrees 
-	int * oddDegree = new int[node_num];
-
-	int j = 0; //populate oddDegree for use by PerfectMatching code
-	for (int i = 0; i<N;i++){
-		if(degree[i]%2 !=0){
-			oddDegree[j] = i;
-			j++;
+		//Deliverable C: Find TSP1.5 path from the constructed MST
+		//construct MST based off of arrays
+		
+		begin = clock();
+		for (int i = 1; i < N; i++){
+			mst2->addEdge(mst2->parent[i], i, mst2->key[i]); //add edges from existing MST representation
 		}
-	}
 
-	int edge_num = node_num * (node_num-1) / 2;
-	int* edges;
-	int* weights;
-	PerfectMatching *pm = new PerfectMatching(node_num, edge_num); 
-	LoadInput(node_num, edge_num, edges, weights, adjacentMatrix, N, oddDegree);
-	//add odd degree vertices to the Perfect Matching code.
-	for (e=0; e<edge_num; e++) {
-		pm->AddEdge(edges[2*e], edges[2*e+1], weights[e]);
-	}
+		struct PerfectMatching::Options options; //algorithm for PerfectMatching
+		int i, e, node_num = 0; 
+		int * nn_ptr = &node_num;
+		int * degree =  new int[N];
 
-	pm->options = options;
-	pm->Solve(); //solve perfect matching
+		calculateDegree(degree, mst2, nn_ptr, N); //get odd degrees 
+		int * oddDegree = new int[node_num];
 
-	float cost = ComputePerfectMatchingCost(node_num, edge_num, edges, weights, pm);
-	cerr << "-------------------" << endl;
-	printf("Total cost of the perfect min-weight matching = %.1f\n", cost);
-	cerr << "-------------------" << endl;
-
-	int count = 0;
-	//add all the edges from perfect matching to the graph representation
-	for (int i=0; i<node_num; i++) {
-		j = pm->GetMatch(i);
-		if (i < j){
-			mst2->addEdge(oddDegree[i], oddDegree[j], adjacentMatrix[oddDegree[i]][oddDegree[j]]);
-			count++; 
+		int j = 0; //populate oddDegree for use by PerfectMatching code
+		for (int i = 0; i<N;i++){
+			if(degree[i]%2 !=0){
+				oddDegree[j] = i;
+				j++;
+			}
 		}
+
+		int edge_num = node_num * (node_num-1) / 2;
+		int* edges;
+		int* weights;
+		PerfectMatching *pm = new PerfectMatching(node_num, edge_num); 
+		LoadInput(node_num, edge_num, edges, weights, adjacentMatrix, N, oddDegree);
+		//add odd degree vertices to the Perfect Matching code.
+		for (e=0; e<edge_num; e++) {
+			pm->AddEdge(edges[2*e], edges[2*e+1], weights[e]);
+		}
+
+		pm->options = options;
+		pm->Solve(); //solve perfect matching
+
+		float cost = ComputePerfectMatchingCost(node_num, edge_num, edges, weights, pm);
+
+		int count = 0;
+		//add all the edges from perfect matching to the graph representation
+		for (int i=0; i<node_num; i++) {
+			j = pm->GetMatch(i);
+			if (i < j){
+				mst2->addEdge(oddDegree[i], oddDegree[j], adjacentMatrix[oddDegree[i]][oddDegree[j]]);
+				count++; 
+			}
+		}
+
+		int total_edges = (N-1) + count; //total edges is number of edges in MST plus min matching
+		//cerr << "TotalEdges: " << total_edges  << endl;
+		mst2->makeTSP1_5(total_edges);
+		end = clock();
+		elapsed_seconds = double(end - begin) / CLOCKS_PER_SEC;
+		//cout << "TSP-1.5 Approximation:" << endl;
+		printf("Total cost of the perfect min-weight matching = %.1f\n", cost);
+		//cout << "Total Weight: " << mst2->tsp1_5_total_weight << endl;
+		//cout << "Time taken: " << elapsed_seconds << endl;
+		//cout << "------------------" << endl;
+		tsp1_5Trials[z] = mst2->tsp1_5_total_weight;
+		timeTSP1_5Trials[z] = elapsed_seconds;
+	
+
+		delete pm;
+		delete [] oddDegree;
+		delete [] degree;
+		delete [] edges;
+		delete [] weights;
+		delete mst2;
 	}
 
-	int total_edges = (N-1) + count; //total edges is number of edges in MST plus min matching
-	cerr << "TotalEdges: " << total_edges  << endl;
-	mst2->makeTSP1_5(total_edges);
+	//Mean calculation
+	cout << "\n\n\n___________________________" << endl;
+	double meanMST = 0.0;
+	double meanMSTTime = 0.0;
+	double meanTSP2 = 0.0;
+	double meanTSP2Time = 0.0;
+	double meanTSP1_5 = 0.0;
+	double meanTSP1_5Time = 0.0;
+	for (int i = 0; i < trials; i++){
+		meanMST += mstTrials[i];
+		meanMSTTime += timeMSTTrials[i];
+		meanTSP2 += tsp2Trials[i];
+		meanTSP2Time += timeTSP2Trials[i];
+		meanTSP1_5 += tsp1_5Trials[i];
+		meanTSP1_5Time += timeTSP1_5Trials[i]; 
+	}
+	meanMST /= trials;
+	meanMSTTime /= trials;
+	meanTSP2 /= trials;
+	meanTSP2Time /= trials;
+	meanTSP1_5 /= trials;
+	meanTSP1_5Time /= trials;
 
-	cout << "TSP-1.5 Approximation:" << endl;
-	cout << "Mean: "<< mst2->calMean(TSP1_5) << endl;
-	cout << "Standard Deviation: " << mst2->calStd(TSP1_5) << endl;
-	cout << "Total Weight: " << mst2->tsp2_total_weight << endl;
-	cout << "------------------" << endl;
-	delete pm;
-	delete [] oddDegree;
-	delete [] degree;
-	delete [] edges;
-	delete [] weights;
+	double stdMST = calSTD(meanMST, mstTrials, trials, false);
+	double stdMSTTime = calSTD(meanMSTTime, timeMSTTrials, trials, false);
+	double stdTSP2 = calSTD(meanTSP2, tsp2Trials, trials, false);
+	double stdTSP2Time = calSTD(meanTSP2Time, timeTSP2Trials, trials, false);
+	double stdTSP1_5 = calSTD(meanTSP1_5, tsp1_5Trials, trials, false);
+	double stdTSP1_5Time = calSTD(meanTSP1_5Time, timeTSP1_5Trials, trials, false);
+
+	delete [] mstTrials;
+	delete [] timeMSTTrials;	
+	delete [] tsp2Trials;
+	delete [] timeTSP2Trials;
+	delete [] tsp1_5Trials;
+	delete [] timeTSP1_5Trials;
 	
-	
+	cout << "MST Weight --> Mean: " << meanMST << "  Std: " << stdMST <<endl;
+	cout << "MST Time   --> Mean: " << meanMSTTime << "  Std: " << stdMSTTime << endl;
+	cout << "TSP-2 Weight --> Mean: " << meanTSP2 << "  Std: " <<stdTSP2 <<endl;
+	cout << "TSP-2 Time -->  Mean: " <<meanTSP2Time << "  Std: " <<stdTSP2Time <<endl;
+	cout << "TSP-1.5 Weight --> Mean: " <<meanTSP1_5 << " Std: " <<stdTSP1_5 << endl;
+	cout << "TSP-1.5 Time --> Mean: " <<meanTSP1_5Time << " Std: " <<stdTSP1_5Time <<endl;
 	return 0;
 }
 

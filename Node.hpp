@@ -20,7 +20,7 @@ class Node {
      * Initialize the Node with the given name.
      */
     Node(int name);
-
+    ~Node();
     /**
      * Add an edge to this Node. If an edge already exists to the given
      * Node, updates the cost and length of the edge to match the
