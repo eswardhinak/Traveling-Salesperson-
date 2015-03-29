@@ -343,7 +343,7 @@ void MST::makeTSP1_5(int total_edges) {
 	traversal[0] = 0;
 	eulerTraversal(0, ci_ptr, traversal, total_edges);
 	bool * duplicateSearch = new bool[N];
-	int * noDuplicates = new int[N];
+	noDuplicates = new int[N]; //for tsp+shortcut(1.5)
 	memset(duplicateSearch, false, N);
 	int j=0;
 	for (int i = 0; i < total_edges; i++){
@@ -363,7 +363,7 @@ void MST::makeTSP1_5(int total_edges) {
 	tsp1_5_total_weight += adjacentMatrix[noDuplicates[k]][noDuplicates[0]];
 	delete [] traversal;
 	delete [] duplicateSearch;
-	delete [] noDuplicates;
+	//delete [] noDuplicates;
 }
 
 void MST::eulerTraversal(int current, int * ci,  int * traversal, int total_edges){
@@ -382,4 +382,126 @@ void MST::eulerTraversal(int current, int * ci,  int * traversal, int total_edge
 		}
 	}
 }
+void MST::vertexRemoval(int numEdges){
+	int * traversalNew;
+	traversalNew = new int[N];
+	//cerr << "Original:";
+	for (int j = 0; j < N; j++){
+		//cerr << noDuplicates[j];
+		traversalNew[j] = noDuplicates[j];
+	}
+	//cerr << endl;
+	vr_total_weight = 0.0;
+	float minChange = 0;
+	int finalI, finalJ;
+	do {
+		minChange = 0;
+		for (int i = 1; i < N-2; i++){
+			for (int j = i+1; j < N-1; j++){
+				int vert1 = traversalNew[i];
+				int vert1Prev = traversalNew[i-1];
+				int vert1Next = traversalNew[i+1];
+				int vert2 = traversalNew[j];
+				int vert2Prev = traversalNew[j-1];
+				int vert2Next = traversalNew[j+1];
+				float totalPrev = 0.0;
+				float newTotal = 0.0;
+				if (j - i  == 1){
+					 totalPrev = adjacentMatrix[vert1Prev][vert1] + adjacentMatrix[vert2][vert2Next] + adjacentMatrix[vert1][vert2];
+			 		 newTotal = adjacentMatrix[vert1Prev][vert2] + adjacentMatrix[vert1][vert2Next]  + adjacentMatrix[vert1][vert2];
+				}
+				else{
+					float prev_edge1_combo = adjacentMatrix[vert1Prev][vert1] + adjacentMatrix[vert1][vert1Next];
+					float prev_edge2_combo = adjacentMatrix[vert2Prev][vert2] + adjacentMatrix[vert2][vert2Next];
+					totalPrev = prev_edge2_combo + prev_edge1_combo;
+					newTotal = adjacentMatrix[vert1Prev][vert2]+ adjacentMatrix[vert2][vert1Next] + adjacentMatrix[vert2Prev][vert1] + adjacentMatrix[vert1][vert2Next];
+				}
+				//cerr << "Previous : " << totalPrev << "Potential: " << newTotal << endl;
+				float change = newTotal  - totalPrev;
+				if (minChange > change){
+					//	cerr << "First Vertex Combo:  " << prev_edge1_combo;
 
+					//cerr << "   Second vertex combo: " << prev_edge2_combo << endl;
+
+					//cerr << change << endl;
+					minChange = change;
+					finalI = i;
+					finalJ = j;
+				}
+
+			}
+		}
+		if (minChange < 0){
+		//	cerr << finalI << " " << finalJ << endl;
+			int swap = traversalNew[finalJ];
+			traversalNew[finalJ] = traversalNew[finalI];
+			traversalNew[finalI] = swap;
+		}
+		//cerr << "now: " <<endl;
+		for (int i = 0; i < N; i++){
+			//cerr << traversalNew[i];
+		}
+		//cerr << endl;
+	}while(minChange < 0);
+	for (int i = 0; i < N; i++){
+		vr_total_weight += adjacentMatrix[traversalNew[i]][traversalNew[(i+1)%N]];
+	}
+	delete [] traversalNew;
+}
+void MST::edgeRemoval(int numEdges){
+	int * traversalNew;
+	traversalNew = new int[N];
+	//cerr << "OriginalL :";
+	for (int k = 0; k < N; k++){
+		//cerr << noDuplicates[k] << "  ";
+		traversalNew[k] = noDuplicates[k];
+	}
+	er_total_weight = 0.0;
+	int tc = 0;
+	float minChange = 0;
+	do {
+		minChange = 0;
+		int finalI, finalJ; //best indices for swap 
+		for (int i = 0; i < N-2; i++){
+			for (int j = i+2; j < N; j++){
+				int vert1 = traversalNew[i];
+				int vert2 = traversalNew[(i+1)%N];
+				int vert3 = traversalNew[j];
+				int vert4 = traversalNew[(j+1)%N];
+				float edge1 = adjacentMatrix[vert1][vert2];
+				float edge2 = adjacentMatrix[vert3][vert4];
+				float total_edgecost = edge1 + edge2;
+				float edge1New = adjacentMatrix[vert1][vert3];
+				float edge2New = adjacentMatrix[vert2][vert4];
+				float newTotal = edge1New + edge2New;
+				float change = newTotal - total_edgecost;
+				if (minChange > change){
+					minChange = change;
+					finalI = i;
+					finalJ = j;
+				}
+			}
+		}
+		//do the best swap 
+		if (minChange < 0){
+			int midpoint = finalI+1+(finalJ-(finalI+1))/2;
+			int count = 0;
+			//cerr << "Replacing: " << traversalNew[finalI] << "-->" << traversalNew[(finalI+1)%N] << " and " << traversalNew[finalJ] << "-->" << traversalNew[(finalJ+1)%N] << endl;
+			for (int k = finalI+1; k <= midpoint; k++){
+				int swap = traversalNew[k];
+				traversalNew[k] = traversalNew[finalJ - count];
+				traversalNew[finalJ-count] = swap;
+				count++;
+			}
+			/*cerr << "Now:" <<endl;
+			for (int s = 0; s < N; s++){
+				cerr << traversalNew[s];
+			}
+			cerr << endl;*/
+		}
+	}while(minChange < 0);
+	for (int i = 0; i < N; i++){
+		er_total_weight += adjacentMatrix[traversalNew[i]][traversalNew[(i+1)%N]];
+	}
+	delete [] traversalNew;
+}

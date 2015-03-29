@@ -1,4 +1,4 @@
-DIRS := . Minmatching ./Minmatching/MinCost
+DIRS := . MinMatching ./MinMatching/MinCost
 
 SOURCES := $(foreach dir, $(DIRS), $(wildcard $(dir)/*.cpp))
 OBJS := $(patsubst %.cpp, %.o, $(SOURCES))

@@ -1,6 +1,6 @@
 #include "common.h"
-#include "Minmatching/PerfectMatching.h"
-#include <string>
+#include "MinMatching/PerfectMatching.h"
+#include <string.h>
 #include <unordered_map>
 #include "Node.hpp"
 #pragma once
@@ -20,7 +20,10 @@ public:
 	float mst_total_weight;
 	float tsp2_total_weight;
 	float tsp1_5_total_weight;
-
+	int * noDuplicates; //for ec1 and tsp1.5
+	float er_total_weight; //for ec 1 edge
+	float vr_total_weight; //for ec1 vertex
+	int aparna;
 
 	MST(float** adjacentMatrix, int size);
 	~MST();
@@ -46,6 +49,12 @@ public:
 	void unHideEdge(int u, int v);
 	void hideEdge(int u, int v);
 	void eulerTraversal(int current, int *  ci,  int * traversal, int total_edges);
+
+	//ec1
+	void edgeRemoval(int numEdges);
+	//ec2
+	void vertexRemoval(int numEdges);
+
 
 
 

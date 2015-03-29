@@ -3,7 +3,7 @@
 #include <ctime>
 #include <math.h>
 #include "MST.h"
-#include "Minmatching/PerfectMatching.h"
+#include "MinMatching/PerfectMatching.h"
 
 /*
 This project is a starter code and wrappers for CSE101W15 Implementation project.
@@ -88,6 +88,12 @@ double calSTD(double mean, double * values, int trials, bool debug){
 	return std;
 }
 int main(int argc, char ** argv) {
+
+	if (argc != 6){
+		cerr << "Please enter the five command line arguments in this order:\n\tW - width\n\tH - height\n\tN - number of vertices\n\tT - number of trials \n\tE - extra credit 20PT-E and 20PT-V \n\t\t(1 to run EC and 0 for don't run it)\n";
+		cerr << "\n\nNote: If number of vertices is very high (near 10000), EC1 will take\n\t exceptionally long time. Expect 30 minutes for 20PT-E \n\tand 20PT-V each per trial" << endl;
+		return 0;
+	}
 	set< pair<int,int> > generatedPointset;
 	float** adjacentMatrix;
 	int W, H, N;
@@ -97,6 +103,7 @@ int main(int argc, char ** argv) {
 	H = atoi(argv[2]);
 	N = atoi(argv[3]);
 	int trials = atoi(argv[4]);
+	int flag = atoi(argv[5]);
 	double * mstTrials = new double[trials];
 	memset(mstTrials, 0, trials);
 	double * timeMSTTrials = new double[trials];
@@ -109,8 +116,14 @@ int main(int argc, char ** argv) {
 	memset(tsp1_5Trials, 0, trials);
 	double * timeTSP1_5Trials  = new double[trials];
 	memset(timeTSP1_5Trials, 0, trials);
+	double * ECEdges = new double[trials];
+	memset(ECEdges, 0, trials);
+	double * ECVertices = new double[trials];
+	memset(ECVertices, 0, trials);
 	cout<<"W: "<<W<<" H: "<<H<<" N:"<<N<<endl; 
 	for (int z = 0 ; z < trials; z++){
+		float OptimumEdgeRemoval = 0;
+		float OptimumVertexRemoval = 0;
 		Point pointset;
 		pointset.generatePoint(W, H, N); //max(W,H,N) should be < 20000 because of memory limitation
 
@@ -204,8 +217,16 @@ int main(int argc, char ** argv) {
 		//cout << "------------------" << endl;
 		tsp1_5Trials[z] = mst2->tsp1_5_total_weight;
 		timeTSP1_5Trials[z] = elapsed_seconds;
-	
-
+		if (flag == 1){
+			cout << "20PT-E EC ...." <<endl;
+			mst2->edgeRemoval(total_edges);
+			OptimumEdgeRemoval = mst2->er_total_weight;
+			cout << "20PT_V EC ... " <<endl;
+			mst2->vertexRemoval(total_edges);
+			OptimumVertexRemoval = mst2->vr_total_weight;
+		}
+		ECEdges[z] = OptimumEdgeRemoval;
+		ECVertices[z] = OptimumVertexRemoval;
 		delete pm;
 		delete [] oddDegree;
 		delete [] degree;
@@ -215,7 +236,7 @@ int main(int argc, char ** argv) {
 	}
 
 	//Mean calculation
-	cout << "\n\n\nNumber of Trials: " << trials <<endl;
+	cout << "\n\n\nWidth: " << W << "   Height: " << H << "   Vertices: " << N << "    Trials: " << trials << endl;
 	cout << "___________________________" << endl;
 	double meanMST = 0.0;
 	double meanMSTTime = 0.0;
@@ -223,6 +244,8 @@ int main(int argc, char ** argv) {
 	double meanTSP2Time = 0.0;
 	double meanTSP1_5 = 0.0;
 	double meanTSP1_5Time = 0.0;
+	double meanECEdges = 0.0;
+	double meanECVertices = 0.0;
 	for (int i = 0; i < trials; i++){
 		meanMST += mstTrials[i];
 		meanMSTTime += timeMSTTrials[i];
@@ -230,6 +253,8 @@ int main(int argc, char ** argv) {
 		meanTSP2Time += timeTSP2Trials[i];
 		meanTSP1_5 += tsp1_5Trials[i];
 		meanTSP1_5Time += timeTSP1_5Trials[i]; 
+		meanECEdges += ECEdges[i];
+		meanECVertices += ECVertices[i];
 	}
 	meanMST /= trials;
 	meanMSTTime /= trials;
@@ -237,6 +262,8 @@ int main(int argc, char ** argv) {
 	meanTSP2Time /= trials;
 	meanTSP1_5 /= trials;
 	meanTSP1_5Time /= trials;
+	meanECEdges /= trials;
+	meanECVertices /= trials;
 
 	double stdMST = calSTD(meanMST, mstTrials, trials, false);
 	double stdMSTTime = calSTD(meanMSTTime, timeMSTTrials, trials, false);
@@ -244,6 +271,8 @@ int main(int argc, char ** argv) {
 	double stdTSP2Time = calSTD(meanTSP2Time, timeTSP2Trials, trials, false);
 	double stdTSP1_5 = calSTD(meanTSP1_5, tsp1_5Trials, trials, false);
 	double stdTSP1_5Time = calSTD(meanTSP1_5Time, timeTSP1_5Trials, trials, false);
+	double stdECEEdges = calSTD(meanECEdges, ECEdges, trials, false);
+	double stdECVertices = calSTD(meanECVertices, ECVertices, trials, false);
 
 	delete [] mstTrials;
 	delete [] timeMSTTrials;	
@@ -251,13 +280,20 @@ int main(int argc, char ** argv) {
 	delete [] timeTSP2Trials;
 	delete [] tsp1_5Trials;
 	delete [] timeTSP1_5Trials;
+	delete [] ECEdges;
+	delete [] ECVertices;
 	
-	cout << "MST Weight --> Mean: " << meanMST << "  Std: " << stdMST <<endl;
-	cout << "MST Time   --> Mean: " << meanMSTTime << "  Std: " << stdMSTTime << endl;
-	cout << "TSP-2 Weight --> Mean: " << meanTSP2 << "  Std: " <<stdTSP2 <<endl;
-	cout << "TSP-2 Time -->  Mean: " <<meanTSP2Time << "  Std: " <<stdTSP2Time <<endl;
-	cout << "TSP-1.5 Weight --> Mean: " <<meanTSP1_5 << " Std: " <<stdTSP1_5 << endl;
-	cout << "TSP-1.5 Time --> Mean: " <<meanTSP1_5Time << " Std: " <<stdTSP1_5Time <<endl;
+	cout << "Costs" << endl;
+	cout << "MST --> Mean: " << meanMST << "  Std: " << stdMST <<endl;
+	cout << "TSP-2 --> Mean: " << meanTSP2 << "  Std: " <<stdTSP2 <<endl;
+	cout << "TSP-1.5 --> Mean: " <<meanTSP1_5 << " Std: " <<stdTSP1_5 << endl;
+	cout << "ECE 20PT-E --> Mean: " << meanECEdges << " Std: " <<stdECEEdges << endl;
+	cout << "ECE 20PT-V ---> Mean: " << meanECVertices << " Std: " <<stdECVertices <<endl;
+
+	/*cout << "Time To Calculate" << endl;
+	cout << "MST --> Mean: " << meanMSTTime << "  Std: " << stdMSTTime << endl;
+	cout << "TSP-2 -->  Mean: " <<meanTSP2Time << "  Std: " <<stdTSP2Time <<endl;
+	cout << "TSP-1.5--> Mean: " <<meanTSP1_5Time << " Std: " <<stdTSP1_5Time <<endl;*/
 	return 0;
 }
 
